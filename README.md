@@ -53,8 +53,42 @@ CORPUS INVALID:
   - entry 'forged' claims verified_by='recorded' but carries no evidence
 ```
 
-That test is in the suite (`test_forged_entry_fails_validation`). It is
-the entire reason this project is worth more than a YAML file.
+That test is in the suite (`test_forged_entry_fails_validation`).
+
+## But the static gate is not enough
+
+The gate proves evidence is **present**. It cannot prove the evidence is
+**true** — an entry with invented output passes it:
+
+```
+$ # forge an entry with INVENTED evidence
+$ python3 tools/build_calls.py --check
+corpus OK: 13 entries          <-- passes!
+
+$ # so we re-execute the call and compare the real output
+$ python3 tools/verify_replay.py --server rea \
+      --cmd "node /path/to/rea/scripts/rea.mjs mcp"
+  ok   rea-list-unknowns
+  ...
+  FAIL forged2: call now errors -> {"error":{"code":"target_unavailable",...}}
+
+12 matched, 1 failed
+```
+
+**The replay verifier is the real gate.** It re-runs every recorded call
+against a live server and compares the *shape* of the output — keys and
+types, so counters that drift between runs still match, while a removed
+key or a changed type is caught.
+
+Two layers:
+
+| layer | proves | cost |
+|---|---|---|
+| `build_calls.py --check` | evidence is present, entries are honest about their state, no duplicates, index is current | instant, no server |
+| `verify_replay.py` | the evidence is **true** — the call still produces that output | needs the server running |
+
+Both run in CI. The replay job is separate because it needs a live
+server.
 
 ## The gap, measured
 
@@ -142,9 +176,21 @@ tools/call_core.py     corpus model, validation, search
 tools/call_profile.py  schema -> guessing-cost analysis
 tools/mcp/call_mcp.py  the MCP server (stdlib only)
 tools/seed_from_server.py  record calls by really executing them
+tools/verify_replay.py  re-execute recorded calls, prove the evidence true
 tools/build_calls.py   validate + generate + CI gate
+tools/record_gif.py    record a live terminal session to a GIF
 playbook/              how to work with this
 ```
+
+## Proven
+
+See `docs/demo.gif` — a live recording of the whole thing, including a
+forged entry being caught.
+
+- 41 tests, all passing
+- 12 corpus entries, every one carrying real recorded output
+- 12/12 entries re-verified by live replay against REA 6.7.0
+- 6 MCP tools, ~790 tokens of schema
 
 ## License
 
