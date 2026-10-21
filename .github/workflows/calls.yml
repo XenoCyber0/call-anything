@@ -26,3 +26,26 @@ jobs:
 
       - name: Run the test suite
         run: python -m unittest discover -s tools -p "test_*.py" -v
+
+  # The static gate can only prove evidence is PRESENT. This job proves it
+  # is TRUE by re-executing every recorded call against a live server and
+  # comparing the output shape.
+  #
+  # It needs a server to talk to, so it runs on a self-hosted runner or
+  # against a public MCP server. It is intentionally separate: a corpus
+  # whose entries were forged should fail HERE even though the static
+  # gate passed.
+  replay:
+    runs-on: [self-hosted, mcp-replay]
+    if: ${{ github.repository_owner == '<you>' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip pyyaml
+      - name: Replay every recorded call against the live server
+        run: |
+          python tools/verify_replay.py \
+            --server rea \
+            --cmd "node ${{ env.REA_DIR }}/scripts/rea.mjs mcp"
