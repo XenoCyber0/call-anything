@@ -1,0 +1,185 @@
+version: 1
+calls:
+- id: rea-list-cutter-sessions
+  server: rea
+  tool: list_cutter_sessions
+  arguments: {}
+  summary: List active Cutter (rizin) debug sessions
+  evidence: '{"sessions":[],"bridge_directory":"/home/cos/.cache/rea/cutter-bridge","discovery_status":"no_live_bridge_found","bridge_directory_security":"not_checked"}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - setup
+  notes: ''
+- id: rea-list-frida-devices
+  server: rea
+  tool: list_frida_devices
+  arguments: {}
+  summary: Call list_frida_devices with no arguments; works with no open target
+  evidence: '{"devices":[{"device_id":"local","name":"Local System","type":"local"},{"device_id":"socket","name":"Local
+    Socket","type":"remote"},{"device_id":"barebone","name":"GDB Remote Stub","type":"remote"}],"cleanup_error":null}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - no-args
+  notes: ''
+- id: rea-batch-decompile
+  server: rea
+  tool: batch_decompile
+  arguments: {}
+  summary: Call batch_decompile with no arguments; works with no open target
+  evidence: '{"evidence_id":"ev_dd970a7d45066c5212e5a6e7f9e8f296a3cd1ae49a13433ed1fdb9f0214df3a7","subject":null,"provider":{"id":"rea-workflow","name":"REA
+    composed investigation workflow","version":"1"},"analysis_profile":null,"predicate_type":"rea.analysis","operation":"batch_decompile","parameters":{"addresses":[]},"raw_result":null,"normalized_result":{"items":[],"total":0,"succeeded":0,"failed":0},"confidence":"derived","authority":"shipped-artifact","environment":null,"limitations":["Artifact
+    identity is unavailable for this observation.","Derived by an REA composed workflow."],"relationship_coverage":null,"locations":[],"evidence_links":[]}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - no-args
+  notes: ''
+- id: rea-list-unknowns
+  server: rea
+  tool: list_unknowns
+  arguments: {}
+  summary: Call list_unknowns with no arguments; works with no open target
+  evidence: '{"result":{"items":[],"total":0,"offset":0,"next_offset":null}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - no-args
+  notes: ''
+- id: rea-binary-session
+  server: rea
+  tool: binary_session
+  arguments: {}
+  summary: Call binary_session with no arguments; works with no open target
+  evidence: '{"result":{"open":false,"cleanup_pending":false,"capabilities":[{"provider":{"id":"native-macos","name":"macOS
+    native inspection utilities","version":null},"shared_limitations":["Availability and textual formats
+    depend on the installed macOS/Xcode toolchain."],"groups":[{"operations":["capture_native_ui_scenario","observe_native_calls"],"effects":["launches_process","may_show_ui","may_access_network","may_write_filesystem"],"limitations":[],"available":false,"reason":"Native
+    macOS utilities require macOS.","availability_code":"unsupported_host"},{"operations":["demangle_swift","inspect_macho","inspect_plist","inspect_signature","list_architectures"],"effects":["launches_process"],"limitations":[],"available":false,"reason":"Native
+    macOS utilities require macOS.","availability_code":"unsupported_host"},{"operations":["inspect_native_dispatch_metadata"],"effects":[],"limitations":[],"available":false,"reason":"Native
+    macOS utilities require macOS.","availability_code":"unsupported_host"},{"operations":["observe_native_ui"],"effects":["launches_process","may_write_filesystem"],"limitations":[],"available":false,"reason":"Native
+    macOS utilities require macOS.","availability_code":"unsupported_host"}]},{"provider":{"id":"rea-artifact-graph","name":"REA
+    safe artifact graph provider","version":"1"},"shared_limitations":["DMG child inventory automatically
+    uses a read-only native macOS mount; PKG remains root-hash-only.","ASAR files discovered in filesystem-backed
+    inventories are expanded without bulk extraction; other nested containers remain recorded only."],"groups":[{"operations":["decode_interface_builder","inspect_keyed_archive","trace_dylib_resolution"],"effects":[],"limitations":[],"available":true,"reason":null,"availability_code":null},{"operations":["extract_artifact","inspect_artifact"],"effects":["launches_process","may_write_filesystem"],"limitations":[],"available":true,"reason":null,"availability_code":null},{"operations":["inspect_asset_catalog"],"effects":['
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - no-args
+  notes: ''
+- id: rea-get-evidence-bundle
+  server: rea
+  tool: get_evidence_bundle
+  arguments: {}
+  summary: Call get_evidence_bundle with no arguments; works with no open target
+  evidence: '{"result":{"artifacts":[],"providers":[{"id":"rea-workflow","name":"REA composed investigation
+    workflow","version":"1"}],"environments":[],"scenarios":[],"captures":[],"unknowns":[],"records":[{"evidence_id":"ev_dd970a7d45066c5212e5a6e7f9e8f296a3cd1ae49a13433ed1fdb9f0214df3a7","subject":null,"provider":{"id":"rea-workflow","name":"REA
+    composed investigation workflow","version":"1"},"analysis_profile":null,"predicate_type":"rea.analysis","operation":"batch_decompile","parameters":{"addresses":[]},"raw_result":null,"normalized_result":{"items":[],"total":0,"succeeded":0,"failed":0},"confidence":"derived","authority":"shipped-artifact","environment":null,"limitations":["Artifact
+    identity is unavailable for this observation.","Derived by an REA composed workflow."],"relationship_coverage":null,"locations":[],"evidence_links":[]}]}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - no-args
+  notes: ''
+- id: rea-list-documents
+  server: rea
+  tool: list_documents
+  arguments: {}
+  summary: 'Call list_documents: requires a target to be open first (open_binary before this)'
+  evidence: '{"error":{"code":"target_unavailable","category":"unavailable","message":"No app is open.
+    Ask the user which app to investigate, then call open_binary with its local path.","retryable":false,"remediation":{"action":"No
+    app is open. Ask the user which app to investigate, then call open_binary with its local path."}}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - precondition
+  notes: ''
+- id: rea-current-address
+  server: rea
+  tool: current_address
+  arguments: {}
+  summary: 'Call current_address: requires a target to be open first (open_binary before this)'
+  evidence: '{"error":{"code":"target_unavailable","category":"unavailable","message":"No app is open.
+    Ask the user which app to investigate, then call open_binary with its local path.","retryable":false,"remediation":{"action":"No
+    app is open. Ask the user which app to investigate, then call open_binary with its local path."}}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - precondition
+  notes: ''
+- id: rea-list-procedures
+  server: rea
+  tool: list_procedures
+  arguments: {}
+  summary: 'Call list_procedures: requires a target to be open first (open_binary before this)'
+  evidence: '{"error":{"code":"target_unavailable","category":"unavailable","message":"No app is open.
+    Ask the user which app to investigate, then call open_binary with its local path.","retryable":false,"remediation":{"action":"No
+    app is open. Ask the user which app to investigate, then call open_binary with its local path."}}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - precondition
+  notes: ''
+- id: rea-list-names
+  server: rea
+  tool: list_names
+  arguments: {}
+  summary: 'Call list_names: requires a target to be open first (open_binary before this)'
+  evidence: '{"error":{"code":"target_unavailable","category":"unavailable","message":"No app is open.
+    Ask the user which app to investigate, then call open_binary with its local path.","retryable":false,"remediation":{"action":"No
+    app is open. Ask the user which app to investigate, then call open_binary with its local path."}}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - precondition
+  notes: ''
+- id: rea-inspect-native-load-image
+  server: rea
+  tool: inspect_native_load_image
+  arguments: {}
+  summary: 'Call inspect_native_load_image: requires a target to be open first (open_binary before this)'
+  evidence: '{"error":{"code":"target_unavailable","category":"unavailable","message":"No app is open.
+    Ask the user which app to investigate, then call open_binary with its local path.","retryable":false,"remediation":{"action":"No
+    app is open. Ask the user which app to investigate, then call open_binary with its local path."}}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - precondition
+  notes: ''
+- id: rea-list-bookmarks
+  server: rea
+  tool: list_bookmarks
+  arguments: {}
+  summary: 'Call list_bookmarks: requires a target to be open first (open_binary before this)'
+  evidence: '{"error":{"code":"target_unavailable","category":"unavailable","message":"No app is open.
+    Ask the user which app to investigate, then call open_binary with its local path.","retryable":false,"remediation":{"action":"No
+    app is open. Ask the user which app to investigate, then call open_binary with its local path."}}}'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 6.7.0
+  tags:
+  - rea
+  - precondition
+  notes: ''

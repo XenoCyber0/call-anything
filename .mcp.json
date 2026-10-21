@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "call-anything": {
+      "command": "python3",
+      "args": ["tools/mcp/call_mcp.py"],
+      "env": {}
+    }
+  }
+}
