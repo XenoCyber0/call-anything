@@ -183,3 +183,116 @@ calls:
   - rea
   - precondition
   notes: ''
+- id: fs-write-file
+  server: fs
+  tool: write_file
+  arguments:
+    path: example
+    content: example
+  summary: Create a new file or completely overwrite an existing file with new content. Use with caution
+    as it will overwrite existing files without warning. Handles text content with proper encoding. Only
+    works within allowed directories. [requires path, content]
+  evidence: Successfully wrote to example
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 2.0.0
+  tags:
+  - verified
+  notes: ''
+- id: fs-create-directory
+  server: fs
+  tool: create_directory
+  arguments:
+    path: test
+  summary: Create a new directory or ensure a directory exists. Can create multiple nested directories
+    in one operation. If the directory already exists, this operation will succeed silently. Perfect for
+    setting up directory structures for projects or ensuring required paths exist. Only works within allowed
+    directories. [requires path]
+  evidence: Successfully created directory test
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 2.0.0
+  tags:
+  - verified
+  notes: ''
+- id: fs-list-directory-with-sizes
+  server: fs
+  tool: list_directory_with_sizes
+  arguments:
+    path: test
+  summary: Get a detailed listing of all files and directories in a specified path, including sizes. Results
+    clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is useful
+    for understanding directory structure and finding specific files within a directory. Only works within
+    allowed directories. [requires path]
+  evidence: '
+
+    Total: 0 files, 0 directories
+
+    Combined size: 0 B'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 2.0.0
+  tags:
+  - verified
+  notes: ''
+- id: fs-directory-tree
+  server: fs
+  tool: directory_tree
+  arguments:
+    path: test
+  summary: Get a recursive tree view of files and directories as a JSON structure. Each entry includes
+    'name', 'type' (file/directory), and 'children' for directories. Files have no children array, while
+    directories always have a children array (which may be empty). The output is formatted with 2-space
+    indentation for readability. Only works within allowed directories. [requires path]
+  evidence: '[]'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 2.0.0
+  tags:
+  - verified
+  notes: ''
+- id: fs-get-file-info
+  server: fs
+  tool: get_file_info
+  arguments:
+    path: example
+  summary: Retrieve detailed metadata about a file or directory. Returns comprehensive information including
+    size, creation time, last modified time, permissions, and type. This tool is perfect for understanding
+    file characteristics without reading the actual content. Only works within allowed directories. [requires
+    path]
+  evidence: 'size: 7
+
+    created: Wed Oct 21 2026 18:51:57 GMT+0100 (GMT+01:00)
+
+    modified: Wed Oct 21 2026 18:51:57 GMT+0100 (GMT+01:00)
+
+    accessed: Wed Oct 21 2026 18:51:57 GMT+0100 (GMT+01:00)
+
+    isDirectory: false
+
+    isFile: true
+
+    permissions: 644'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 2.0.0
+  tags:
+  - verified
+  notes: ''
+- id: fs-list-allowed-directories
+  server: fs
+  tool: list_allowed_directories
+  arguments: {}
+  summary: Returns the list of directories that this server is allowed to access. Subdirectories within
+    these allowed directories are also accessible. Use this to understand which directories and their
+    nested paths are available before trying to access files. [no required args]
+  evidence: 'Allowed directories:
+
+    /tmp/mcpfs'
+  verified_by: recorded
+  verified_at: '2026-10-21'
+  server_version: 2.0.0
+  tags:
+  - no-args
+  - verified
+  notes: ''

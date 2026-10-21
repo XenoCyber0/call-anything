@@ -1,6 +1,57 @@
 # Call-Anything
 
-**The corpus of VERIFIED working MCP tool invocations.**
+**Verified working MCP tool invocations — and the harness that proves them.**
+
+Two halves:
+
+1. **The corpus** — a shared store of tool calls that were *actually
+   executed*, with the real output as evidence.
+2. **The harness** — a command a server author runs in CI that *probes
+   their own server*, discovers which calls work, and emits the corpus
+   automatically.
+
+The harness is the point. Nobody has to write anything down: the corpus
+fills itself as servers are tested.
+
+## The harness, in one command
+
+```bash
+python3 tools/harness.py --server my-server \
+    --cmd "node ./dist/index.js" \
+    --out calls.yaml --report harness-report.json
+```
+
+It connects to your server, reads its `tools/list`, and for every tool it
+tries a bounded set of candidate arguments drawn from **the server's own
+schema** — its enums, its defaults, its examples — plus a tiny list of
+common values. It keeps only the calls that actually succeeded.
+
+```
+server: secure-filesystem-server 2.0.0
+tools : 14
+
+  [1/14] read_file . needs args x {"path": "example"} ...
+  [7/14] create_directory . needs args x {"path": "example"} + {"path": "test"}
+  [14/14] list_allowed_directories + {}
+
+tools probed      : 14
+proven callable   : 6
+precondition only : 0
+new entries added : 6
+```
+
+No model. No API key. No network. It just runs your server and reports
+what works.
+
+Three outcomes per tool, and all three are worth recording:
+
+| outcome | what it means | recorded as |
+|---|---|---|
+| **callable** | the call succeeded | a verified call, with the real output |
+| **precondition** | it failed with "no app is open" / "not loaded" | verified knowledge about the *order of operations* |
+| **unproven** | it failed for another reason | not recorded — we do not guess |
+
+## The corpus
 
 An MCP server's `inputSchema` tells your agent the *shape* of a call — the
 argument names, their types, which are required. It never tells you:
@@ -175,6 +226,8 @@ CALLS.md               generated index (never edit by hand)
 tools/call_core.py     corpus model, validation, search
 tools/call_profile.py  schema -> guessing-cost analysis
 tools/mcp/call_mcp.py  the MCP server (stdlib only)
+tools/harness.py        PROBE a live server, emit a corpus automatically
+tools/probe.py          the probe strategy (schema-derived candidates)
 tools/seed_from_server.py  record calls by really executing them
 tools/verify_replay.py  re-execute recorded calls, prove the evidence true
 tools/build_calls.py   validate + generate + CI gate
@@ -187,10 +240,17 @@ playbook/              how to work with this
 See `docs/demo.gif` — a live recording of the whole thing, including a
 forged entry being caught.
 
-- 41 tests, all passing
-- 12 corpus entries, every one carrying real recorded output
-- 12/12 entries re-verified by live replay against REA 6.7.0
+- **62 tests**, all passing
+- **18 corpus entries** across 2 servers, every one carrying real recorded output
+- **Harness on REA** (210 tools): 110 entries generated automatically —
+  9 callable, 101 preconditions, 100 unproven. 108/110 replay clean.
+- **Harness on the official `server-filesystem`** (14 tools, unrelated
+  codebase): 6/6 proven callable, **6/6 replay clean**, zero configuration.
 - 6 MCP tools, ~790 tokens of schema
+
+The two unproven REA entries are honest failures, not bugs: one depends on
+a Frida device that was attached at capture time, one changes because
+probing the server itself mutates the ledger it reads.
 
 ## License
 

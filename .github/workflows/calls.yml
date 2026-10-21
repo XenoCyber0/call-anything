@@ -27,14 +27,58 @@ jobs:
       - name: Run the test suite
         run: python -m unittest discover -s tools -p "test_*.py" -v
 
-  # The static gate can only prove evidence is PRESENT. This job proves it
-  # is TRUE by re-executing every recorded call against a live server and
-  # comparing the output shape.
+  # Layer 2: a server author runs the harness in their own CI to check
+  # that the calls this repo documents for their server still work.
   #
-  # It needs a server to talk to, so it runs on a self-hosted runner or
-  # against a public MCP server. It is intentionally separate: a corpus
-  # whose entries were forged should fail HERE even though the static
-  # gate passed.
+  # The pattern is the distribution mechanism: every server that runs this
+  # job contributes a verified corpus, and the corpus grows without anyone
+  # having to write anything down.
+  #
+  # Copy this block into your own repo to use it:
+  #
+  #   - run: python -m pip install pyyaml
+  #   - run: |
+  #       python tools/harness.py --server my-server \
+  #         --cmd "node ./dist/index.js" \
+  #         --out calls.yaml --report harness-report.json
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: python -m pip install --upgrade pip pyyaml
+
+      - name: Probe the reference server and build a corpus
+        run: |
+          python tools/harness.py \
+            --server rea \
+            --cmd "node ${{ env.REA_DIR }}/scripts/rea.mjs mcp" \
+            --out /tmp/generated.yaml \
+            --report /tmp/harness-report.json
+
+      - name: The generated corpus must pass the validator
+        run: |
+          python tools/build_calls.py --check \
+            --corpus /tmp/generated.yaml \
+            --no-index-check
+
+      - name: Upload the generated corpus and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-calls
+          path: |
+            /tmp/generated.yaml
+            /tmp/harness-report.json
+
+  # Layer 3: re-execute the recorded calls against the live server and
+  # prove the evidence is still true.
+  #
+  # This is the layer that catches FORGED evidence. The static gate can
+  # only prove evidence is present; only a replay can prove it is real.
   replay:
     runs-on: [self-hosted, mcp-replay]
     if: ${{ github.repository_owner == '<you>' }}

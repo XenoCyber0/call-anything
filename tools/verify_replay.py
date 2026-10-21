@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -45,13 +46,36 @@ def comparable(evidence: str) -> str:
     their types -- which is what a recorded call actually promises.
     """
     text = evidence.strip()
+
+    # Random identifiers (evidence ids, uuids) change on every run and say
+    # nothing about whether the call still works.
+    RID = re.compile(
+        r"\b(ev|unk|session|req|task|evt|trace|span|run)_[0-9a-f]{8,}\b",
+        re.I,
+    )
+
+    def scrub(t: str) -> str:
+        # Order matters: replace random ids FIRST, while they still look
+        # like ids, then neutralise the remaining numbers.
+        t = RID.sub("<id>", t)
+        return re.sub(r"\d+", "<n>", t)
+
+    obj = None
     try:
         obj = json.loads(text)
     except Exception:
-        # not JSON: compare a normalised digest of the text
-        import re
-        t = re.sub(r"\d+", "<n>", text)
-        return "text:" + t[:400]
+        # Not JSON. It may still be JSON embedded in a longer text blob
+        # (many servers prefix their payload). Try to find the JSON
+        # object inside it; if that fails, compare the scrubbed text.
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end > start:
+            try:
+                obj = json.loads(text[start:end + 1])
+            except Exception:
+                obj = None
+        if obj is None:
+            return "text:" + scrub(text)[:400]
 
     def shape(node, depth=0):
         if depth > 6:
@@ -67,6 +91,8 @@ def comparable(evidence: str) -> str:
         if isinstance(node, (int, float)):
             return "num"
         if isinstance(node, str):
+            if RID.search(node):
+                return "id"
             return "str"
         if node is None:
             return "null"
