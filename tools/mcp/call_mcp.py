@@ -314,11 +314,13 @@ def _t_record_call(args: dict) -> dict:
     )
     entries.append(entry)
     _write_corpus(entries)
+    index_status = _regenerate_index()
     return {
         "ok": True,
         "id": eid,
         "call_id": entry.call_id,
         "entry": _entry_brief(entry),
+        "index": index_status,
         "note": "written locally. Commit and open a pull request to share it.",
     }
 
@@ -330,8 +332,13 @@ def _t_corpus_stats(args: dict) -> dict:
     tools: set[str] = set()
     tags: dict[str, int] = {}
     for e in entries:
-        servers[e.server] = servers.get(e.server, 0) + 1
-        tools.add(f"{e.server}.{e.tool}")
+        # Count only VERIFIED entries per server, so this map agrees with
+        # `verified_entries`. Counting claimed entries here made the two
+        # disagree -- a server could appear in the map with zero verified
+        # entries under it.
+        if e.is_verified:
+            servers[e.server] = servers.get(e.server, 0) + 1
+            tools.add(f"{e.server}.{e.tool}")
         for t in e.tags:
             tags[t] = tags.get(t, 0) + 1
     return {
@@ -366,6 +373,43 @@ def _write_corpus(entries: list[core.CallEntry]) -> None:
     with open(CORPUS_PATH, "w", encoding="utf-8") as fh:
         yaml.safe_dump(doc, fh, sort_keys=False, allow_unicode=True,
                        default_flow_style=False, width=100)
+
+
+def _index_path() -> str:
+    """Where the index for the CURRENT corpus belongs.
+
+    The index is a view of the corpus, so it must live next to the corpus
+    it describes. When the server is pointed at an alternate corpus via
+    CALL_ANYTHING_CORPUS, writing the index to the repo's CALLS.md would
+    inject that corpus's contents into the repository -- polluting the
+    real index and breaking the CI gate for the real corpus.
+
+    So: the default corpus indexes to the repo's CALLS.md, and any other
+    corpus indexes to a CALLS.md beside itself.
+    """
+    import build_calls
+
+    return build_calls.index_path_for(CORPUS_PATH)
+
+
+def _regenerate_index() -> str | None:
+    """Rewrite the index so the CI index check stays green.
+
+    The corpus and the generated index are two views of the same data.
+    Writing the corpus without regenerating the index leaves them
+    inconsistent, and `tools/build_calls.py --check` (the CI gate) then
+    fails with "index is stale" -- a self-inflicted red build caused by
+    using the server as designed.
+
+    Returns a short status string, or None if the index could not be
+    rewritten (never fatal: the corpus write already succeeded).
+    """
+    try:
+        import build_calls
+        index = build_calls.regenerate_index(CORPUS_PATH)
+        return f"regenerated {index}"
+    except Exception as exc:  # pragma: no cover - defensive
+        return f"could not regenerate index: {exc}"
 
 
 HANDLERS = {

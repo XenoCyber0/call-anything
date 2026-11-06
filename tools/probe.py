@@ -74,11 +74,17 @@ class Finding:
     # The arguments that produced the precondition, so the entry replays
     # exactly.
     precondition_args: dict[str, Any] = field(default_factory=dict)
+    # Did the BARE call (no arguments at all) actually succeed? This is
+    # what `callable_bare` means, and it cannot be inferred from
+    # `requires_args`: a tool can fail bare, succeed with arguments, and
+    # still be perfectly callable -- just not with `{}`.
+    bare_attempted: bool = False
+    bare_ok: bool = False
 
     @property
     def is_callable_bare(self) -> bool:
-        """True when the tool was proven to work with no arguments."""
-        return bool(self.working) and not self.requires_args
+        """True when the tool was PROVEN to work with no arguments."""
+        return self.bare_ok
 
 
 def _candidates(prop: dict[str, Any]) -> list[Any]:

@@ -146,8 +146,9 @@ print("  -> only a LIVE REPLAY can prove the evidence is true")
 PY
 
 step "7. Live replay: re-execute every recorded call and compare"
-if [ -f /home/cos/rea/scripts/rea.mjs ]; then
-  python3 tools/verify_replay.py --server rea --cmd "node /home/cos/rea/scripts/rea.mjs mcp" 2>&1 | tail -18
+REA_MJS="${REA_MJS:-/path/to/rea/scripts/rea.mjs}"
+if [ -f "$REA_MJS" ]; then
+  python3 tools/verify_replay.py --server rea --cmd "node $REA_MJS mcp" 2>&1 | tail -18
 else
   echo "  (rea not installed; skipping live replay)"
 fi

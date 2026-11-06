@@ -5,7 +5,7 @@ calls:
   tool: list_cutter_sessions
   arguments: {}
   summary: List active Cutter (rizin) debug sessions
-  evidence: '{"sessions":[],"bridge_directory":"/home/cos/.cache/rea/cutter-bridge","discovery_status":"no_live_bridge_found","bridge_directory_security":"not_checked"}'
+  evidence: '{"sessions":[],"bridge_directory":"/home/<user>/.cache/rea/cutter-bridge","discovery_status":"no_live_bridge_found","bridge_directory_security":"not_checked"}'
   verified_by: recorded
   verified_at: '2026-10-21'
   server_version: 6.7.0

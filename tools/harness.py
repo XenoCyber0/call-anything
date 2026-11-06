@@ -53,6 +53,14 @@ def probe_server(client: MCPClient, tools: list[dict], max_per_tool: int,
             resp = client.call(name, args)
             p = P.summarise_probe(name, args, resp)
             kind = P.classify_failure(p)
+            if not args:
+                # Track the bare call explicitly. `callable_bare` means
+                # "we PROVED {} works", not "the schema has no required
+                # fields" -- a tool can require args at runtime even
+                # though its schema does not declare them.
+                finding.bare_attempted = True
+                if kind == "ok":
+                    finding.bare_ok = True
             if kind == "ok":
                 finding.working.append(args)
                 finding.working_evidence.append(p.output)
@@ -85,6 +93,16 @@ def probe_server(client: MCPClient, tools: list[dict], max_per_tool: int,
         if not finding.working and not finding.preconditions:
             req = (tool.get("inputSchema") or {}).get("required") or []
             finding.requires_args = list(req)
+        elif finding.working and not any(
+            not a for a in finding.working
+        ):
+            # The bare call was NOT among the working calls, so this tool
+            # needs arguments even if the schema does not mark them
+            # required. Record what it actually needs so the entry is
+            # tagged `needs-args` and agents are not told to call it with
+            # `{}`.
+            req = (tool.get("inputSchema") or {}).get("required") or []
+            finding.requires_args = list(req) or ["(runtime)"]
         findings[name] = finding
         if verbose:
             print()
@@ -137,7 +155,7 @@ def build_entries(server: str, version: str, tools: list[dict],
                 verified_by="recorded",
                 verified_at=today,
                 server_version=version,
-                tags=_tags(tool, f, {}) + ["precondition"],
+                tags=sorted(set(_tags(tool, f, f.precondition_args or {}) + ["precondition"])),
             )
             entries.append(e)
     return entries
@@ -266,7 +284,8 @@ def main() -> int:
             "tools": {
                 name: {
                     "callable": bool(f.working),
-                    "callable_bare": bool(f.working) and not f.requires_args,
+                    "callable_bare": f.is_callable_bare,
+                    "bare_attempted": f.bare_attempted,
                     "working_arguments": f.working,
                     "preconditions": f.preconditions,
                     "requires_args": f.requires_args,

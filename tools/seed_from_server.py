@@ -5,7 +5,7 @@ Nothing enters the corpus without a real recorded result. This is the
 whole point: an entry exists only because a call was made and worked.
 
     python3 tools/seed_from_server.py --server rea \
-        --cmd "node /home/cos/rea/scripts/rea.mjs mcp" \
+        --cmd "node /path/to/rea/scripts/rea.mjs mcp" \
         --call list_architectures \
         --call list_documents
 """
@@ -23,12 +23,54 @@ sys.path.insert(0, os.path.join(REPO, "tools"))
 import call_core as core  # noqa: E402
 
 
+def resolve_command(cmd: list[str]) -> list[str]:
+    """Make a command runnable on Windows.
+
+    On Windows, `npx`, `npm` and friends are `.cmd` shims. `subprocess`
+    with a list argument and no `shell=True` does not look for PATHEXT, so
+    spawning them raises FileNotFoundError even though the command is
+    installed and on PATH.
+
+    The fix is to resolve the executable to its real path, appending the
+    PATHEXT extension when needed. On POSIX this is a no-op.
+    """
+    if not cmd:
+        return cmd
+    exe = cmd[0]
+    if os.name != "nt":
+        return cmd
+
+    # Already an explicit path to a file that exists -- leave it alone.
+    if os.path.isfile(exe):
+        return cmd
+
+    # Resolve against PATH, honouring PATHEXT.
+    path_env = os.environ.get("PATH", "")
+    exts = [""]
+    pathext = os.environ.get("PATHEXT", "")
+    if pathext:
+        exts += [e.lower() for e in pathext.split(os.pathsep) if e]
+    seen = set()
+    for directory in path_env.split(os.pathsep):
+        if not directory:
+            continue
+        for ext in exts:
+            if ext in seen:
+                continue
+            seen.add(ext)
+            candidate = os.path.join(directory, exe + ext)
+            if os.path.isfile(candidate):
+                return [candidate] + list(cmd[1:])
+
+    return cmd
+
+
 class MCPClient:
     """Minimal MCP stdio client."""
 
     def __init__(self, cmd: list[str]):
         self.proc = subprocess.Popen(
-            cmd,
+            resolve_command(cmd),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
@@ -213,6 +255,23 @@ def main() -> int:
         yaml.safe_dump(doc, fh, sort_keys=False, allow_unicode=True,
                        default_flow_style=False, width=100)
     print(f"wrote {len(entries)} entries to {args.corpus}")
+
+    # The corpus and CALLS.md are two views of the same data. Writing the
+    # corpus without regenerating the index leaves them inconsistent, and
+    # `tools/build_calls.py --check` (the CI gate) then fails with "index
+    # is stale" -- a self-inflicted red build caused by using the seeder
+    # exactly as CONTRIBUTING describes. The seeder is the PREFERRED way
+    # to add a call, so it must leave the index in sync.
+    try:
+        import build_calls
+        index = build_calls.regenerate_index(args.corpus)
+        print(f"regenerated {index}")
+    except Exception as exc:
+        print(
+            f"WARNING: could not regenerate the index ({exc}); "
+            f"run `python3 tools/build_calls.py` before committing",
+            file=sys.stderr,
+        )
     return 0
 
 

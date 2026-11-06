@@ -236,6 +236,11 @@ def search(
                     e.notes,
                     " ".join(e.tags),
                     json.dumps(e.arguments, sort_keys=True),
+                    # Evidence is included because a precondition's error
+                    # code often appears ONLY in the recorded output. An
+                    # agent searching for `target_unavailable` should
+                    # find the entry that documents it.
+                    e.evidence,
                 ]
             ).lower()
             if q not in hay:

@@ -27,6 +27,43 @@ CORPUS = os.path.join(REPO, "data", "calls.yaml")
 INDEX = os.path.join(REPO, "CALLS.md")
 
 
+def index_path_for(corpus_path: str) -> str:
+    """Where the index for a given corpus belongs.
+
+    The index is a view of the corpus, so it must live next to the corpus
+    it describes. The default corpus indexes to the repo's CALLS.md; any
+    other corpus (a harness output, a test fixture, an alternate corpus
+    via CALL_ANYTHING_CORPUS) indexes to a CALLS.md beside itself.
+
+    Writing an alternate corpus's entries into the repo's CALLS.md would
+    pollute the real index and break the CI gate for the real corpus.
+    """
+    if os.path.abspath(corpus_path) == os.path.abspath(CORPUS):
+        return INDEX
+    return os.path.join(os.path.dirname(os.path.abspath(corpus_path)),
+                        "CALLS.md")
+
+
+def regenerate_index(corpus_path: str) -> str:
+    """Rewrite the index for `corpus_path` and return the path written.
+
+    The corpus and the generated index are two views of the same data.
+    Writing the corpus without regenerating the index leaves them
+    inconsistent, and `tools/build_calls.py --check` (the CI gate) then
+    fails with "index is stale" -- a self-inflicted red build caused by
+    using the tooling as designed.
+
+    Never raises: the corpus write has already succeeded by the time this
+    is called, so a failure here must not lose the call.
+    """
+    entries = core.load_corpus(corpus_path)
+    content = render(entries)
+    index = index_path_for(corpus_path)
+    with open(index, "w", encoding="utf-8") as fh:
+        fh.write(content)
+    return index
+
+
 def render(entries: list[core.CallEntry]) -> str:
     verified = [e for e in entries if e.is_verified]
     claimed = [e for e in entries if not e.is_verified]

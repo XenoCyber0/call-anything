@@ -121,14 +121,26 @@ def main() -> int:
         and (not args.only or args.only in e.id)
     ]
     if not targets:
-        print(f"no verified entries for server {args.server!r}")
-        return 0
+        # A vacuous pass is the worst failure mode for a verifier: a CI
+        # job with a typo'd server name must NOT report success.
+        print(
+            f"no verified entries for server {args.server!r}",
+            file=sys.stderr,
+        )
+        print(
+            "refusing to report success on an empty target set -- check the "
+            "--server name against the corpus",
+            file=sys.stderr,
+        )
+        return 2
 
     client = MCPClient(args.cmd.split())
     failures = 0
     matches = 0
     try:
-        client.initialize()
+        init = client.initialize()
+        info = init.get("result", {}).get("serverInfo", {})
+        live_version = str(info.get("version", "") or "")
         print(f"replaying {len(targets)} entries against {args.server}\n")
         for e in targets:
             resp = client.call(e.tool, e.arguments)
@@ -160,10 +172,23 @@ def main() -> int:
                 print(f"  ok   {e.id}")
                 matches += 1
                 if args.update:
+                    # A replayed entry MUST record the server version it was
+                    # replayed against -- the corpus validator rejects
+                    # `verified_by: replayed` entries with an empty version.
+                    # We have the live server in hand, so record it. If the
+                    # server reports no version, do NOT promote: that would
+                    # write a corpus our own validator rejects.
+                    if not live_version:
+                        print(
+                            "        skipped -- server reports no version, "
+                            "cannot record a valid replayed entry"
+                        )
+                        continue
                     e.evidence = out[:2000]
                     e.verified_by = "replayed"
                     import datetime
                     e.verified_at = datetime.date.today().isoformat()
+                    e.server_version = live_version
             else:
                 print(f"  DIFF {e.id}")
                 print(f"        stored : {want[:180]}")
